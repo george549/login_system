@@ -1,0 +1,143 @@
+import json
+import csv
+from username_functions import get_username
+from username_functions import get_password
+
+
+current_users = {}
+users = []
+user_password = {}
+
+# get_username prompts the user to input a username and asks for a few extra
+# details (name, location and dob). The username is stored into a json file
+# while the extra details are stored into a csv file.
+def get_username():
+    """Get username for new user, reject and try again if username in use, then
+    get details."""
+    while True:
+        new_user = input("What username would you like? (Should be at least 4 characters)\n")
+        if len(new_user) < 4:
+            print('\nUsername is less than 4 characters.')
+            continue
+        else:
+            filename = 'current_users.json'
+            with open(filename) as f:
+                check_users = json.load(f)
+            if new_user.lower() in check_users:
+                print(f"\nSorry, {new_user} is already taken!")
+                continue
+            else:
+                print(f"\nGreat, {new_user} is available to use! Just need a "
+                      f"few details from you now.")
+                users.append(new_user)
+                current_users[new_user] = {}
+                current_users[new_user]['username'] = new_user
+                current_users[new_user]['first_name'] = input('\nWhat is your first name? ')
+                current_users[new_user]['last_name'] = input('\nWhat is you last name? ')
+                current_users[new_user]['location'] = input('\nWhich country do you reside in? ')
+                current_users[new_user]['dob'] = input('\nWhat is your DOB? ')
+                with open('user_info.csv', 'a', newline='') as f:
+                    thewriter = csv.writer(f)
+                    thewriter.writerow([])
+                    thewriter.writerow([current_users[new_user]['username'],
+                                        current_users[new_user]['first_name'],
+                                        current_users[new_user]['last_name'],
+                                        current_users[new_user]['location'],
+                                        current_users[new_user]['dob']])
+                user_password['username'] = new_user
+                return new_user
+
+# get_password prompts the new user to make a password. The password is then
+# stored as a value in a json file. The key being the username.
+def get_password(new_user):
+    """Make a valid password."""
+    while True:
+        password = input('\nPlease enter a password to use for logging in.'
+                         ' (Password must contain letter and numbers and be'
+                         'more than 6 characters long)\n')
+        if len(password) < 6:
+            print('\nYour password is less than 6 characters.')
+            continue
+        elif not any(char.isdigit() for char in password):
+            print('\nThe password should have at least one number.')
+            continue
+        else:
+            while True:
+                password_confirm = input('\nConfirm your password.\n')
+                if password_confirm != password:
+                    print('Sorry, the passwords do not match.')
+                    continue
+                else:
+                    print('Password confirmed.')
+                    print('-----Account Created-----')
+                    current_users[new_user]['password'] = password
+                    user_password['password'] = password
+                    break
+            break
+
+is_user = input('Have you signed up already? (y/n) ')
+# check if user already has an account
+while True:
+    if is_user.lower() == 'n':
+        get_password(get_username())
+        filename = 'current_users.json'
+        with open(filename, 'r+') as f1:
+            data = json.load(f1)
+            for user in users:
+                data.append(user)
+                f1.seek(0)
+                json.dump(data, f1)
+        data = json.load(open('user_password.json'))
+        if type(data) is dict:
+            data = [data]
+        data.append(user_password)
+        with open('user_password.json', 'w') as f2:
+            json.dump(data, f2)
+            break
+    elif is_user.lower() == 'y':
+        prompt_user = input('\nUsername: ')
+
+        found = False
+        filename = 'user_password.json'
+        with open(filename) as f3:
+            check_user = json.load(f3)
+            for index, user in enumerate(check_user):
+                if prompt_user == user["username"]:
+                    found = True
+                    selected_user = user
+                    break
+        if not found:
+            print('\nUsername not found.')
+            prompt_signup = input('\nDo you want to register? (y/n) ')
+            if prompt_signup.lower() == 'y':
+                get_password(get_username())
+                filename = 'current_users.json'
+                with open(filename, 'r+') as f1:
+                    data = json.load(f1)
+                    for user in users:
+                        data.append(user)
+                        f1.seek(0)
+                        json.dump(data, f1)
+                data = json.load(open('user_password.json'))
+                if type(data) is dict:
+                    data = [data]
+                data.append(user_password)
+                with open('user_password.json', 'w') as f2:
+                    json.dump(data, f2)
+                break
+            else:
+                break
+        else:
+            prompt_password = input('\nPassword: ')
+            filename = 'user_password.json'
+            with open(filename) as f4:
+                checking_pw = json.load(f4)
+                if selected_user["password"]==prompt_password:
+                    print(f"\n\t\t{prompt_user} signing in...")
+                else:
+                    print("Incorrect password.")
+                    break
+                break
+    else:
+        print('That is not a valid response.')
+        break
