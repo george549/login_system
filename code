@@ -12,16 +12,18 @@ def get_username():
     """Get username for new user, reject and try again if username in use, then
     get details."""
     while True:
-        new_user = input("What username would you like? (Should be at least 4 characters)\n")
+        new_user = input("\nWhat username would you like? (Should be at least 4 characters)\n")
         if len(new_user) < 4:
             print('\nUsername is less than 4 characters.')
             continue
         else:
-            filename = 'current_users.json'
+            filename = 'user_password.json'
             with open(filename) as f:
                 check_users = json.load(f)
-            if new_user.lower() in check_users:
-                print(f"\nSorry, {new_user} is already taken!")
+            for index, c_user in enumerate(check_users):
+                if new_user in c_user['username']:
+                    print(f"\nSorry, {new_user} is already taken!")
+                    break
                 continue
             else:
                 print(f"\nGreat, {new_user} is available to use! Just need a "
@@ -66,7 +68,7 @@ def get_password(new_user):
                     continue
                 else:
                     print('Password confirmed.')
-                    print('-----Account Created-----')
+                    print('\n-----Account Created-----')
                     current_users[new_user]['password'] = password
                     user_password['password'] = password
                     break
@@ -75,15 +77,9 @@ def get_password(new_user):
 is_user = input('Have you signed up already? (y/n) ')
 # check if user already has an account
 while True:
+    # if not prompt user to set up an account
     if is_user.lower() == 'n':
         get_password(get_username())
-        filename = 'current_users.json'
-        with open(filename, 'r+') as f1:
-            data = json.load(f1)
-            for user in users:
-                data.append(user)
-                f1.seek(0)
-                json.dump(data, f1)
         data = json.load(open('user_password.json'))
         if type(data) is dict:
             data = [data]
@@ -91,9 +87,11 @@ while True:
         with open('user_password.json', 'w') as f2:
             json.dump(data, f2)
             break
+    # if user has account - ask for username and password
     elif is_user.lower() == 'y':
         prompt_user = input('\nUsername: ')
-
+        # iterate through json file to find if username is in the file
+        # assign selected_user variable to the found user in the file
         found = False
         filename = 'user_password.json'
         with open(filename) as f3:
@@ -103,18 +101,12 @@ while True:
                     found = True
                     selected_user = user
                     break
+        # if user not found after iteration ask if they want to set up account
         if not found:
             print('\nUsername not found.')
             prompt_signup = input('\nDo you want to register? (y/n) ')
             if prompt_signup.lower() == 'y':
                 get_password(get_username())
-                filename = 'current_users.json'
-                with open(filename, 'r+') as f1:
-                    data = json.load(f1)
-                    for user in users:
-                        data.append(user)
-                        f1.seek(0)
-                        json.dump(data, f1)
                 data = json.load(open('user_password.json'))
                 if type(data) is dict:
                     data = [data]
@@ -124,6 +116,8 @@ while True:
                 break
             else:
                 break
+        # after finding the correct user - prompt for their password
+        # check password with password in json file
         else:
             prompt_password = input('\nPassword: ')
             filename = 'user_password.json'
